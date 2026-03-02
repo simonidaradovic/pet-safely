@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum HazardCategory {
+  TICKS          // KRPELJI
+  POISON         // OTROV
+  AGGRESSIVE_DOG // AGRESIVNI PSI
+  BROKEN_GLASS   // STAKLO / OPASAN OTPAD
+  OTHER          // OSTALO
+}
+
+enum HazardStatus {
+  OPEN        // AKTIVNO
+  IN_PROGRESS // U TOKU
+  RESOLVED    // RESENO
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  hazards      Hazard[] // <-- dodaj vezu
+}
+
+model Hazard {
+  id          Int            @id @default(autoincrement())
+  title       String         @db.VarChar(120)
+  description String         @db.Text
+  category    HazardCategory
+  status      HazardStatus   @default(OPEN)
+
+  lat         Decimal        @db.Decimal(9, 6)
+  lng         Decimal        @db.Decimal(9, 6)
+  address     String?        @db.VarChar(255) 
+
+  reportedAt  DateTime       @default(now()) 
+  resolvedAt  DateTime?                      
+
+  userId      Int
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([lat, lng])
+  @@index([category, status, reportedAt])
+  @@index([userId, reportedAt])
+}
